@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "706094513456",
+    "project_id": "synergy-holistic-app",
+    "storage_bucket": "synergy-holistic-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:706094513456:android:71760fd56f1034c4251cf5",
+        "android_client_info": {
+          "package_name": "com.example.capproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKrfMvG-zB-hHU5O4gWmulrDLT4ldcUq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
