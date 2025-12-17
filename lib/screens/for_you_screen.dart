@@ -15,7 +15,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
 
   bool _showAllRecipes = false;
 
-  // Healing cards (keep your current list for now)
+  // Healing cards (you can replace with Firestore later)
   final List<ContentItem> _healingCards = [
     ContentItem(
       id: 'breath_5',
@@ -46,46 +46,84 @@ class _ForYouScreenState extends State<ForYouScreen> {
     ),
   ];
 
+  bool _preferRecipeNow() {
+    final h = DateTime.now().hour;
+
+    // Morning: 5am–11:59am → recipes
+    if (h >= 5 && h < 12) return true;
+
+    // Evening/Night: 6pm–4:59am → healing
+    if (h >= 18 || h < 5) return false;
+
+    // Afternoon: recipes (you can change later)
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final preferRecipe = _preferRecipeNow();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _Header(),
+        const _Header(),
         const SizedBox(height: 16),
 
-        // 1) HERO (Today’s focus)
-        _HeroFocusCard(
-          title: 'Today’s focus',
-          headline: 'Choose one small thing',
-          subtitle: 'Start with a recipe or a short reset.',
-          icon: Icons.auto_awesome,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Hero action (next step)')),
-            );
-          },
-        ),
+        // =====================
+        // SMART HERO
+        // =====================
+        if (preferRecipe)
+          _SmartRecipeHero(
+            placeholderAsset: _placeholderAsset,
+            onOpenRecipe: (data) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecipeDetailScreen(data: data),
+                ),
+              );
+            },
+          )
+        else
+          _SmartHealingHero(
+            item: _healingCards.first,
+            onStart: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Starting: ${_healingCards.first.title} (demo)'),
+                ),
+              );
+            },
+          ),
+
         const SizedBox(height: 20),
 
-        // 2) NOURISH (Recipes)
-        _SectionTitle('Nourish'),
+        // =====================
+        // NOURISH (Recipes)
+        // =====================
+        const _SectionTitle('Nourish'),
         const SizedBox(height: 8),
         _RecipeCarousel(
           placeholderAsset: _placeholderAsset,
           showAll: _showAllRecipes,
-          onToggleShowAll: () => setState(() => _showAllRecipes = !_showAllRecipes),
+          onToggleShowAll: () =>
+              setState(() => _showAllRecipes = !_showAllRecipes),
           onOpenRecipe: (data) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => RecipeDetailScreen(data: data)),
+              MaterialPageRoute(
+                builder: (_) => RecipeDetailScreen(data: data),
+              ),
             );
           },
         ),
+
         const SizedBox(height: 24),
 
-        // 3) RESTORE (Healing cards)
-        _SectionTitle('Restore'),
+        // =====================
+        // RESTORE (Healing cards)
+        // =====================
+        const _SectionTitle('Restore'),
         const SizedBox(height: 8),
         for (final item in _healingCards)
           _HealingCardTile(
@@ -105,6 +143,8 @@ class _ForYouScreenState extends State<ForYouScreen> {
 /// HEADER
 /// --------------------
 class _Header extends StatelessWidget {
+  const _Header();
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -127,7 +167,25 @@ class _Header extends StatelessWidget {
 }
 
 /// --------------------
-/// HERO CARD
+/// SECTION TITLE
+/// --------------------
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+/// --------------------
+/// HERO BASE CARD
 /// --------------------
 class _HeroFocusCard extends StatelessWidget {
   final String title;
@@ -188,7 +246,8 @@ class _HeroFocusCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      style:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -203,19 +262,138 @@ class _HeroFocusCard extends StatelessWidget {
 }
 
 /// --------------------
-/// SECTION TITLE
+/// SMART HERO: RECIPE
 /// --------------------
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
+class _SmartRecipeHero extends StatelessWidget {
+  final String placeholderAsset;
+  final ValueChanged<Map<String, dynamic>> onOpenRecipe;
+
+  const _SmartRecipeHero({
+    required this.placeholderAsset,
+    required this.onOpenRecipe,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('recipes')
+          .orderBy('title')
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _HeroFocusCard(
+            title: 'Today’s focus',
+            headline: 'Make something simple',
+            subtitle: 'Add recipes to see a daily pick here.',
+            icon: Icons.restaurant,
+            onTap: () {},
+          );
+        }
+
+        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+        final title = (data['title'] ?? '') as String;
+        final minutes = data['minutes'] ?? 0;
+
+        final imageAsset = (data['imageAsset'] as String?) ?? '';
+        final safeImage = imageAsset.isNotEmpty ? imageAsset : placeholderAsset;
+
+        return Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => onOpenRecipe(data),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
+                  child: Image.asset(
+                    safeImage,
+                    height: 170,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        placeholderAsset,
+                        height: 170,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'TODAY’S RECIPE',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$minutes min • Tap to view',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// --------------------
+/// SMART HERO: HEALING
+/// --------------------
+class _SmartHealingHero extends StatelessWidget {
+  final ContentItem item;
+  final VoidCallback onStart;
+
+  const _SmartHealingHero({
+    required this.item,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _HeroFocusCard(
+      title: 'Tonight’s reset',
+      headline: item.title,
+      subtitle: '${item.durationMinutes} min • ${item.description}',
+      icon: Icons.self_improvement,
+      onTap: onStart,
     );
   }
 }
@@ -324,7 +502,8 @@ class _RecipeMiniCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Image.asset(
                   safeImage,
                   height: 110,
@@ -354,7 +533,8 @@ class _RecipeMiniCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       '$minutes min',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                      style:
+                      TextStyle(fontSize: 12, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -408,7 +588,7 @@ class _HealingCardTile extends StatelessWidget {
 }
 
 /// --------------------
-/// MODEL (same idea as your old one)
+/// MODEL
 /// --------------------
 class ContentItem {
   final String id;
