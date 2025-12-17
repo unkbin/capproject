@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'recipe_detail_screen.dart';
+import 'card_detail_screen.dart';
 
 class ForYouScreen extends StatefulWidget {
   const ForYouScreen({super.key});
@@ -12,51 +13,14 @@ class ForYouScreen extends StatefulWidget {
 
 class _ForYouScreenState extends State<ForYouScreen> {
   static const String _placeholderAsset = 'assets/recipes/placeholder.jpg';
-
   bool _showAllRecipes = false;
-
-  // Healing cards (you can replace with Firestore later)
-  final List<ContentItem> _healingCards = [
-    ContentItem(
-      id: 'breath_5',
-      title: 'Pause and breathe',
-      description: 'A short reset to calm your body.',
-      type: 'Mindfulness',
-      durationMinutes: 5,
-      difficulty: 'Beginner',
-      tags: ['stress', 'short', 'anytime'],
-    ),
-    ContentItem(
-      id: 'body_scan_10',
-      title: 'Body scan for sleep',
-      description: 'Let your muscles soften before bed.',
-      type: 'Sleep',
-      durationMinutes: 10,
-      difficulty: 'Easy',
-      tags: ['sleep', 'evening', 'relax'],
-    ),
-    ContentItem(
-      id: 'gratitude_3',
-      title: 'Gratitude pause',
-      description: 'End the day with a small reflection.',
-      type: 'Mindfulness',
-      durationMinutes: 3,
-      difficulty: 'Beginner',
-      tags: ['short', 'evening'],
-    ),
-  ];
 
   bool _preferRecipeNow() {
     final h = DateTime.now().hour;
 
-    // Morning: 5am–11:59am → recipes
-    if (h >= 5 && h < 12) return true;
-
-    // Evening/Night: 6pm–4:59am → healing
-    if (h >= 18 || h < 5) return false;
-
-    // Afternoon: recipes (you can change later)
-    return true;
+    if (h >= 5 && h < 12) return true; // morning
+    if (h >= 18 || h < 5) return false; // night
+    return true; // afternoon
   }
 
   @override
@@ -85,16 +49,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
             },
           )
         else
-          _SmartHealingHero(
-            item: _healingCards.first,
-            onStart: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Starting: ${_healingCards.first.title} (demo)'),
-                ),
-              );
-            },
-          ),
+          const _SmartCardHero(),
 
         const SizedBox(height: 20),
 
@@ -121,19 +76,57 @@ class _ForYouScreenState extends State<ForYouScreen> {
         const SizedBox(height: 24),
 
         // =====================
-        // RESTORE (Healing cards)
+        // RESTORE (Cards from Firestore)
         // =====================
         const _SectionTitle('Restore'),
         const SizedBox(height: 8),
-        for (final item in _healingCards)
-          _HealingCardTile(
-            item: item,
-            onStart: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Starting: ${item.title} (demo)')),
+
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('cards')
+              .orderBy('updatedAt', descending: true)
+              .limit(5)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Text('Failed to load cards.');
+            }
+
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator()),
               );
-            },
-          ),
+            }
+
+            final docs = snapshot.data!.docs;
+            if (docs.isEmpty) {
+              return const Text('No cards yet.');
+            }
+
+            return Column(
+              children: [
+                for (final doc in docs)
+                  _FirestoreHealingCardTile(
+                    data: doc.data() as Map<String, dynamic>,
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('All Cards screen is next'),
+                        ),
+                      );
+                    },
+                    child: const Text('Show more cards'),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -246,8 +239,7 @@ class _HeroFocusCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style:
-                      TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -375,25 +367,49 @@ class _SmartRecipeHero extends StatelessWidget {
 }
 
 /// --------------------
-/// SMART HERO: HEALING
+/// SMART HERO: CARD (from Firestore)
 /// --------------------
-class _SmartHealingHero extends StatelessWidget {
-  final ContentItem item;
-  final VoidCallback onStart;
-
-  const _SmartHealingHero({
-    required this.item,
-    required this.onStart,
-  });
+class _SmartCardHero extends StatelessWidget {
+  const _SmartCardHero();
 
   @override
   Widget build(BuildContext context) {
-    return _HeroFocusCard(
-      title: 'Tonight’s reset',
-      headline: item.title,
-      subtitle: '${item.durationMinutes} min • ${item.description}',
-      icon: Icons.self_improvement,
-      onTap: onStart,
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('cards')
+          .orderBy('updatedAt', descending: true)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _HeroFocusCard(
+            title: 'Tonight’s reset',
+            headline: 'Take a small pause',
+            subtitle: 'Add cards to see a nightly pick here.',
+            icon: Icons.self_improvement,
+            onTap: () {},
+          );
+        }
+
+        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+        final title = (data['title'] ?? '') as String;
+        final quote = (data['quote'] ?? '') as String;
+
+        return _HeroFocusCard(
+          title: 'Tonight’s reset',
+          headline: title,
+          subtitle: quote.isEmpty ? 'Tap to open' : quote,
+          icon: Icons.self_improvement,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CardDetailScreen(data: data),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -462,7 +478,8 @@ class _RecipeCarousel extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: onToggleShowAll,
-                  child: Text(showAll ? 'Show less recipes' : 'Show more recipes'),
+                  child:
+                  Text(showAll ? 'Show less recipes' : 'Show more recipes'),
                 ),
               ),
           ],
@@ -548,25 +565,33 @@ class _RecipeMiniCard extends StatelessWidget {
 }
 
 /// --------------------
-/// HEALING CARD TILE
+/// FIRESTORE CARD TILE
 /// --------------------
-class _HealingCardTile extends StatelessWidget {
-  final ContentItem item;
-  final VoidCallback onStart;
+class _FirestoreHealingCardTile extends StatelessWidget {
+  final Map<String, dynamic> data;
 
-  const _HealingCardTile({
-    required this.item,
-    required this.onStart,
+  const _FirestoreHealingCardTile({
+    required this.data,
   });
 
   @override
   Widget build(BuildContext context) {
-    final icon = _iconForType(item.type);
+    final title = (data['title'] ?? '') as String;
+    final minutes = data['minutes'] ?? 5;
+    final appText = (data['appText'] ?? '') as String;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CardDetailScreen(data: data),
+            ),
+          );
+        },
         leading: Container(
           width: 44,
           height: 44,
@@ -574,53 +599,25 @@ class _HealingCardTile extends StatelessWidget {
             color: const Color(0xFF4CAF50).withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: const Color(0xFF2E7D32)),
+          child: const Icon(
+            Icons.self_improvement,
+            color: Color(0xFF2E7D32),
+          ),
         ),
-        title: Text(item.title),
-        subtitle: Text('${item.durationMinutes} min • ${item.description}'),
+        title: Text(title),
+        subtitle: Text('$minutes min • $appText'),
         trailing: FilledButton(
-          onPressed: onStart,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CardDetailScreen(data: data),
+              ),
+            );
+          },
           child: const Text('Start'),
         ),
       ),
     );
-  }
-}
-
-/// --------------------
-/// MODEL
-/// --------------------
-class ContentItem {
-  final String id;
-  final String title;
-  final String description;
-  final String type;
-  final int durationMinutes;
-  final String difficulty;
-  final List<String> tags;
-
-  ContentItem({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.durationMinutes,
-    required this.difficulty,
-    required this.tags,
-  });
-}
-
-IconData _iconForType(String type) {
-  switch (type.toLowerCase()) {
-    case 'mindfulness':
-      return Icons.self_improvement;
-    case 'movement':
-      return Icons.fitness_center;
-    case 'nutrition':
-      return Icons.restaurant;
-    case 'sleep':
-      return Icons.bedtime;
-    default:
-      return Icons.auto_awesome;
   }
 }
