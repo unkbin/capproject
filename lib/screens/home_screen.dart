@@ -258,7 +258,7 @@ class _TodayFocusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.10),
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -407,7 +407,7 @@ class _SuggestionTile extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFF4CAF50).withOpacity(0.10),
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: const Color(0xFF2E7D32)),
