@@ -10,7 +10,7 @@ import 'screens/auth/welcome_screen.dart';
 // Main app screens
 import 'screens/home_screen.dart';
 import 'screens/for_you_screen.dart';
-import 'screens/tracker_screen.dart';
+import 'screens/tracker/tracker_screen.dart';
 import 'screens/bookings_screen.dart';
 import 'screens/profile_screen.dart';
 
@@ -68,13 +68,26 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    ForYouScreen(),
-    TrackerScreen(),
-    BookingsScreen(),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _screens = [
+      HomeScreen(
+        onGoToTab: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      ),
+      const ForYouScreen(),
+      const TrackerScreen(),
+      const BookingsScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {

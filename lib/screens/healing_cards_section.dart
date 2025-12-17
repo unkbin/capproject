@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import 'card_detail_screen.dart';
-
-
+import 'healing_cards_all_screen.dart';
 
 class HealingCardsSection extends StatelessWidget {
   const HealingCardsSection({super.key});
@@ -27,12 +27,15 @@ class HealingCardsSection extends StatelessWidget {
 
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('cards')
+              .collection('cards') // keep as-is, or change later
               .orderBy('updatedAt', descending: true)
-              .limit(5)
+              .limit(3)
               .snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.hasError) return const Text('Failed to load healing cards.');
+            if (snapshot.hasError) {
+              return const Text('Failed to load healing cards.');
+            }
+
             if (!snapshot.hasData) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
@@ -41,7 +44,9 @@ class HealingCardsSection extends StatelessWidget {
             }
 
             final docs = snapshot.data!.docs;
-            if (docs.isEmpty) return const Text('No healing cards yet.');
+            if (docs.isEmpty) {
+              return const Text('No healing cards yet.');
+            }
 
             return Column(
               children: [
@@ -62,12 +67,16 @@ class HealingCardsSection extends StatelessWidget {
                       },
                     ),
                   ),
+
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('All Healing Cards screen is next')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HealingCardsAllScreen(),
+                        ),
                       );
                     },
                     child: const Text('Show more cards'),
@@ -103,10 +112,13 @@ class HealingCardPreviewCard extends StatelessWidget {
   String _readPreview(Map<String, dynamic> d) {
     final p = d['preview'];
     if (p is String && p.trim().isNotEmpty) return p.trim();
+
     final a = d['appText'];
     if (a is String && a.trim().isNotEmpty) return a.trim();
+
     final q = d['quote'];
     if (q is String && q.trim().isNotEmpty) return q.trim();
+
     return 'Tap to begin.';
   }
 
@@ -132,7 +144,8 @@ class HealingCardPreviewCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.spa_outlined, size: 18, color: theme.colorScheme.primary),
+                  Icon(Icons.spa_outlined,
+                      size: 18, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
                     'Healing Card',
@@ -143,6 +156,7 @@ class HealingCardPreviewCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+
               Text(
                 title,
                 maxLines: 2,
@@ -153,6 +167,7 @@ class HealingCardPreviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+
               Text(
                 preview,
                 maxLines: 2,
@@ -163,9 +178,11 @@ class HealingCardPreviewCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(Icons.schedule,
+                      size: 16, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     '$minutes min',
@@ -177,8 +194,11 @@ class HealingCardPreviewCard extends StatelessWidget {
                   FilledButton(
                     onPressed: onStart,
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: const Text('Start'),
                   ),

@@ -1,20 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
 import 'recipe_detail_screen.dart';
-
-
+import 'all_recipes_screen.dart';
 
 class NourishSection extends StatelessWidget {
   const NourishSection({
     super.key,
     required this.placeholderAsset,
-    required this.showAll,
-    required this.onToggleShowAll,
   });
 
   final String placeholderAsset;
-  final bool showAll;
-  final VoidCallback onToggleShowAll;
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +24,9 @@ class NourishSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
+
         _RecipeCarousel(
           placeholderAsset: placeholderAsset,
-          showAll: showAll,
-          onToggleShowAll: onToggleShowAll,
           onOpenRecipe: (data) {
             Navigator.push(
               context,
@@ -46,17 +41,15 @@ class NourishSection extends StatelessWidget {
   }
 }
 
-// Paste your _RecipeCarousel + _RecipeMiniCard here (unchanged)
+/// --------------------
+/// RECIPES CAROUSEL (always shows 5)
+/// --------------------
 class _RecipeCarousel extends StatelessWidget {
   final String placeholderAsset;
-  final bool showAll;
-  final VoidCallback onToggleShowAll;
   final ValueChanged<Map<String, dynamic>> onOpenRecipe;
 
   const _RecipeCarousel({
     required this.placeholderAsset,
-    required this.showAll,
-    required this.onToggleShowAll,
     required this.onOpenRecipe,
   });
 
@@ -71,6 +64,7 @@ class _RecipeCarousel extends StatelessWidget {
       stream: recipeStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) return const Text('Failed to load recipes.');
+
         if (!snapshot.hasData) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -81,7 +75,7 @@ class _RecipeCarousel extends StatelessWidget {
         final docs = snapshot.data!.docs;
         if (docs.isEmpty) return const Text('No recipes yet.');
 
-        final visible = showAll ? docs : docs.take(5).toList();
+        final visible = docs.take(5).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,14 +97,21 @@ class _RecipeCarousel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            if (docs.length > 5)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: onToggleShowAll,
-                  child: Text(showAll ? 'Show less recipes' : 'Show more recipes'),
-                ),
+
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AllRecipesScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Show more recipes'),
               ),
+            ),
           ],
         );
       },
@@ -133,6 +134,7 @@ class _RecipeMiniCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = (data['title'] ?? '') as String;
     final minutes = data['minutes'] ?? 0;
+
     final imageAsset = (data['imageAsset'] as String?) ?? '';
     final safeImage = imageAsset.isNotEmpty ? imageAsset : placeholderAsset;
 

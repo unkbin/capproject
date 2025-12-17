@@ -1,289 +1,375 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'all_recipes_screen.dart';
+import 'healing_cards_all_screen.dart';
+
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.onGoToTab,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final greeting = _greetingForHour(now.hour);
-    final dateLabel = _formatDate(now);
+  /// Switch bottom nav tab (do NOT push screens for tabs)
+  final void Function(int index) onGoToTab;
 
-    final stats = <DailyStat>[
-      DailyStat('Hydration', '5 / 8 glasses', 5 / 8),
-      DailyStat('Movement', '25 / 30 min', 25 / 30),
-      DailyStat('Sleep', '7.5 h', 7.5 / 8),
-    ];
-
-    final planItems = <PlanItem>[
-      PlanItem(
-        type: 'Nutrition',
-        title: 'Morning Recipe',
-        subtitle: 'Golden turmeric smoothie',
-        tag: '5 min • Easy',
-        icon: Icons.local_drink,
-      ),
-      PlanItem(
-        type: 'Movement',
-        title: 'Movement break',
-        subtitle: '10 min gentle stretch',
-        tag: 'Low impact • Home',
-        icon: Icons.fitness_center,
-      ),
-      PlanItem(
-        type: 'Mindfulness',
-        title: 'Mindfulness moment',
-        subtitle: '5 min breathing reset',
-        tag: 'Beginner • Calm',
-        icon: Icons.self_improvement,
-      ),
-    ];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Greeting + date
-          Text(
-            '$greeting, Nabin',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            dateLabel,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Snapshot
-          _SnapshotCard(
-            text: 'You’ve completed 2 of 3 habits today. Nice work.',
-          ),
-          const SizedBox(height: 16),
-
-          // Quick stats
-          Text(
-            'Today at a glance',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _StatsRow(stats: stats),
-          const SizedBox(height: 24),
-
-          // Wellness plan
-          Text(
-            'Today’s wellness plan',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (final item in planItems) _PlanCard(item: item),
-          const SizedBox(height: 24),
-
-          // Card of the day
-          Text(
-            'Card of the day',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tap to reveal a small focus for today.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _CardOfTheDay(),
-          const SizedBox(height: 24),
-
-          // Quick actions
-          Text(
-            'Quick actions',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _QuickActions(),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  String _greetingForHour(int hour) {
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
     return 'Good evening';
   }
 
-  String _formatDate(DateTime date) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _TopRow(
+          title: 'Synergy Holistic Health',
+          onMenuTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Menu coming soon')),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
 
-    final weekday = weekdays[date.weekday - 1];
-    final month = months[date.month - 1];
-    return '$weekday, ${date.day} $month';
+        _UserGreeting(greetingText: _greeting()),
+        const SizedBox(height: 18),
+
+        _TodayFocusCard(
+          title: 'Today’s focus',
+          headline: 'One gentle step',
+          subtitle: 'Pick a recipe or a healing card that fits your energy.',
+          onTap: () => onGoToTab(1), // For You tab
+        ),
+        const SizedBox(height: 18),
+
+        Text(
+          'Quick actions',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        _QuickActionsGrid(
+          actions: [
+            _QuickAction(
+              icon: Icons.auto_awesome,
+              label: 'For You',
+              onTap: () => onGoToTab(1),
+            ),
+            _QuickAction(
+              icon: Icons.spa_outlined,
+              label: 'Healing Cards',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HealingCardsAllScreen()),
+                );
+              },
+            ),
+            _QuickAction(
+              icon: Icons.restaurant,
+              label: 'Recipes',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AllRecipesScreen()),
+                );
+              },
+            ),
+            _QuickAction(
+              icon: Icons.favorite_border,
+              label: 'Tracker',
+              onTap: () => onGoToTab(2),
+            ),
+            _QuickAction(
+              icon: Icons.calendar_month,
+              label: 'Bookings',
+              onTap: () => onGoToTab(3),
+            ),
+            _QuickAction(
+              icon: Icons.person_outline,
+              label: 'Profile',
+              onTap: () => onGoToTab(4),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 22),
+
+        Text(
+          'Suggested for now',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        _SuggestionTile(
+          icon: Icons.spa_outlined,
+          title: 'Start a healing card',
+          subtitle: 'A 5 minute reset to settle your body.',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HealingCardsAllScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+        _SuggestionTile(
+          icon: Icons.restaurant,
+          title: 'Make something simple',
+          subtitle: 'Short recipes when energy is low.',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AllRecipesScreen()),
+            );
+          },
+        ),
+      ],
+    );
   }
 }
 
-/// Simple data models
-
-class DailyStat {
-  final String label;
-  final String value;
-  final double progress; // 0.0–1.0
-
-  DailyStat(this.label, this.value, this.progress);
-}
-
-class PlanItem {
-  final String type;
-  final String title;
-  final String subtitle;
-  final String tag;
-  final IconData icon;
-
-  PlanItem({
-    required this.type,
+/// --------------------
+/// TOP ROW
+/// --------------------
+class _TopRow extends StatelessWidget {
+  const _TopRow({
     required this.title,
-    required this.subtitle,
-    required this.tag,
-    required this.icon,
+    required this.onMenuTap,
   });
+
+  final String title;
+  final VoidCallback onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: onMenuTap,
+          icon: const Icon(Icons.menu),
+          tooltip: 'Menu',
+        ),
+      ],
+    );
+  }
 }
 
-/// Widgets for sections
+/// --------------------
+/// USER GREETING (Firestore user name)
+/// --------------------
+class _UserGreeting extends StatelessWidget {
+  const _UserGreeting({
+    required this.greetingText,
+  });
 
-class _SnapshotCard extends StatelessWidget {
-  final String text;
+  final String greetingText;
 
-  const _SnapshotCard({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Text(
+        '$greetingText.',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
+        final name = (data?['name'] as String?)?.trim();
+
+        final firstName =
+        (name == null || name.isEmpty) ? 'there' : name.split(' ').first;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$greetingText, $firstName',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What would help most today?',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// --------------------
+/// TODAY FOCUS CARD
+/// --------------------
+class _TodayFocusCard extends StatelessWidget {
+  const _TodayFocusCard({
+    required this.title,
+    required this.headline,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String headline;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.12),
-                shape: BoxShape.circle,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Color(0xFF2E7D32),
+                  size: 26,
+                ),
               ),
-              child: const Icon(Icons.insights, color: Color(0xFF4CAF50)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 14),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      headline,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const Icon(Icons.chevron_right),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _StatsRow extends StatelessWidget {
-  final List<DailyStat> stats;
+/// --------------------
+/// QUICK ACTIONS GRID
+/// --------------------
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid({required this.actions});
 
-  const _StatsRow({required this.stats});
+  final List<_QuickAction> actions;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 90,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: stats.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final stat = stats[index];
-          return _StatCard(stat: stat);
-        },
+    return GridView.builder(
+      itemCount: actions.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.05,
       ),
+      itemBuilder: (context, index) {
+        final a = actions[index];
+        return _QuickActionTile(action: a);
+      },
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final DailyStat stat;
+class _QuickAction {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
-  const _StatCard({required this.stat});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({required this.action});
+
+  final _QuickAction action;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 130,
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: action.onTap,
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Icon(action.icon, size: 24),
+              const SizedBox(height: 8),
               Text(
-                stat.label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                stat.value,
-                style: const TextStyle(fontSize: 12),
-              ),
-              const Spacer(),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: stat.progress.clamp(0.0, 1.0),
-                  minHeight: 5,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation(Color(0xFF4CAF50)),
-                ),
+                action.label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -293,185 +379,47 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _PlanCard extends StatelessWidget {
-  final PlanItem item;
+/// --------------------
+/// SUGGESTION TILE
+/// --------------------
+class _SuggestionTile extends StatelessWidget {
+  const _SuggestionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
-  const _PlanCard({required this.item});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(item.icon, color: const Color(0xFF4CAF50)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.tag,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // later: open detail or start flow
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Opening: ${item.title} (coming soon)'),
-                  ),
-                );
-              },
-              child: const Text('Start'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CardOfTheDay extends StatefulWidget {
-  const _CardOfTheDay();
-
-  @override
-  State<_CardOfTheDay> createState() => _CardOfTheDayState();
-}
-
-class _CardOfTheDayState extends State<_CardOfTheDay> {
-  bool _showBack = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _showBack = !_showBack;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.all(18),
-        height: 170,
-        decoration: BoxDecoration(
-          color: _showBack ? Colors.green.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 8,
-              offset: Offset(0, 4),
-              color: Colors.black12,
-            ),
-          ],
-        ),
-        child: Center(
-          child: _showBack
-              ? const Text(
-            'Pause three times today to take\n3 slow breaths.\n\nNotice how your body feels.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14),
-          )
-              : const Text(
-            'Tap to reveal today’s focus.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFF4CAF50).withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Icon(icon, color: const Color(0xFF2E7D32)),
         ),
+        title: Text(title),
+        subtitle: Text(
+          subtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(Icons.chevron_right),
       ),
-    );
-  }
-}
-
-class _QuickActions extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                  Text('Go to the Tracker tab to log today’s check-in.'),
-                ),
-              );
-            },
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Log today’s check-in'),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Bookings screen coming soon.'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.calendar_month),
-                label: const Text('Book a session'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                      Text('Journal feature will be added in a later phase.'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.edit_note),
-                label: const Text('Open journal'),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

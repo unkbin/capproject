@@ -5,7 +5,6 @@ import 'smart_hero_section.dart';
 import 'nourish_section.dart';
 import 'healing_cards_section.dart';
 
-
 class ForYouScreen extends StatefulWidget {
   const ForYouScreen({super.key});
 
@@ -15,13 +14,12 @@ class ForYouScreen extends StatefulWidget {
 
 class _ForYouScreenState extends State<ForYouScreen> {
   static const String placeholderAsset = 'assets/recipes/placeholder.jpg';
-  bool showAllRecipes = false;
 
   bool _preferRecipeNow() {
     final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return true;
-    if (h >= 18 || h < 5) return false;
-    return true;
+    if (h >= 5 && h < 12) return true; // morning
+    if (h >= 18 || h < 5) return false; // night
+    return true; // afternoon
   }
 
   @override
@@ -31,9 +29,15 @@ class _ForYouScreenState extends State<ForYouScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // ---------------------
+        // HEADER
+        // ---------------------
         const ForYouHeader(),
         const SizedBox(height: 16),
 
+        // ---------------------
+        // SMART HERO
+        // ---------------------
         SmartHeroSection(
           preferRecipe: preferRecipe,
           placeholderAsset: placeholderAsset,
@@ -41,14 +45,18 @@ class _ForYouScreenState extends State<ForYouScreen> {
 
         const SizedBox(height: 20),
 
+        // ---------------------
+        // NOURISH
+        // ---------------------
         NourishSection(
           placeholderAsset: placeholderAsset,
-          showAll: showAllRecipes,
-          onToggleShowAll: () => setState(() => showAllRecipes = !showAllRecipes),
         ),
 
         const SizedBox(height: 24),
 
+        // ---------------------
+        // HEALING CARDS
+        // ---------------------
         const HealingCardsSection(),
       ],
     );
