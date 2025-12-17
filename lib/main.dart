@@ -38,23 +38,19 @@ class SynergyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      // Decide which screen to show based on auth state
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Still checking auth state
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
 
-          // User logged in → go to main app
           if (snapshot.hasData) {
             return const MainShell();
           }
 
-          // Not logged in → show welcome / login / signup
           return const WelcomeScreen();
         },
       ),
