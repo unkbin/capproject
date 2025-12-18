@@ -5,14 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 // Auth screens
-import 'screens/auth/welcome_screen.dart';
+import 'features/auth/screens/welcome_screen.dart';
 
 // Main app screens
-import 'screens/home_screen.dart';
-import 'screens/for_you_screen.dart';
-import 'screens/tracker/tracker_screen.dart';
-import 'screens/bookings_screen.dart';
-import 'screens/profile_screen.dart';
+import 'features/home/home_screen.dart';
+import 'features/home/for_you_screen.dart';
+import 'features/tracker/screens/tracker_screen.dart';
+import 'features/home/screens/bookings_screen.dart';
+import 'features/home/screens/profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

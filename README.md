@@ -14,3 +14,10 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Assets
+
+- Recipe images now live under `assets/recipes/images/` (placeholder: `assets/recipes/images/placeholder.jpg`).
+- Project docs live under `assets/docs/`.
+- Run a quick asset check before commits to catch missing/stray assets:
+  - `dart run tool/asset_check.dart`
