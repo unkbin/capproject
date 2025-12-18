@@ -47,7 +47,7 @@ class HealingCardsAllScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CardDetailScreen(data: data),
+                        builder: (_) => CardDetailScreen(cardId: doc.id),
                       ),
                     );
                   },

@@ -26,6 +26,11 @@ dependencies:
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
 
+  # QR Scanner
+  mobile_scanner: ^5.2.3
+  http: ^1.2.2
+  url_launcher: ^6.3.1
+
 # ----------------------------
 # DEV DEPENDENCIES
 # ----------------------------
@@ -45,3 +50,4 @@ flutter:
     - assets/recipes/images/
     - assets/cards/
     - assets/docs/
+

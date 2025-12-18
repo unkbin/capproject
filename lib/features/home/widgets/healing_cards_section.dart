@@ -27,7 +27,7 @@ class HealingCardsSection extends StatelessWidget {
 
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('cards') // keep as-is, or change later
+              .collection('cards')
               .orderBy('updatedAt', descending: true)
               .limit(3)
               .snapshots(),
@@ -59,9 +59,7 @@ class HealingCardsSection extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CardDetailScreen(
-                              data: doc.data() as Map<String, dynamic>,
-                            ),
+                            builder: (_) => CardDetailScreen(cardId: doc.id),
                           ),
                         );
                       },

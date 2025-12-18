@@ -244,7 +244,8 @@ class _SmartCardHero extends StatelessWidget {
           );
         }
 
-        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+        final doc = snapshot.data!.docs.first;
+        final data = doc.data() as Map<String, dynamic>;
         final title = (data['title'] ?? '') as String;
         final quote = (data['quote'] ?? '') as String;
 
@@ -257,7 +258,7 @@ class _SmartCardHero extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => CardDetailScreen(data: data),
+                builder: (_) => CardDetailScreen(cardId: doc.id),
               ),
             );
           },

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'screens/all_recipes_screen.dart';
 import 'widgets/healing_cards_all_screen.dart';
+import '../healing_cards/screens/healing_card_scan_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -11,7 +13,6 @@ class HomeScreen extends StatelessWidget {
     required this.onGoToTab,
   });
 
-  /// Switch bottom nav tab (do NOT push screens for tabs)
   final void Function(int index) onGoToTab;
 
   String _greeting() {
@@ -43,7 +44,7 @@ class HomeScreen extends StatelessWidget {
           title: 'Today’s focus',
           headline: 'One gentle step',
           subtitle: 'Pick a recipe or a healing card that fits your energy.',
-          onTap: () => onGoToTab(1), // For You tab
+          onTap: () => onGoToTab(1),
         ),
         const SizedBox(height: 18),
 
@@ -68,17 +69,36 @@ class HomeScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const HealingCardsAllScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const HealingCardsAllScreen(),
+                  ),
                 );
               },
             ),
+
+            // ✅ SCAN CARD ACTION
+            _QuickAction(
+              icon: Icons.qr_code_scanner,
+              label: 'Scan Card',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const HealingCardScanScreen(),
+                  ),
+                );
+              },
+            ),
+
             _QuickAction(
               icon: Icons.restaurant,
               label: 'Recipes',
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AllRecipesScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const AllRecipesScreen(),
+                  ),
                 );
               },
             ),
@@ -117,7 +137,9 @@ class HomeScreen extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const HealingCardsAllScreen()),
+              MaterialPageRoute(
+                builder: (_) => const HealingCardsAllScreen(),
+              ),
             );
           },
         ),
@@ -129,7 +151,9 @@ class HomeScreen extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AllRecipesScreen()),
+              MaterialPageRoute(
+                builder: (_) => const AllRecipesScreen(),
+              ),
             );
           },
         ),
@@ -167,7 +191,6 @@ class _TopRow extends StatelessWidget {
         IconButton(
           onPressed: onMenuTap,
           icon: const Icon(Icons.menu),
-          tooltip: 'Menu',
         ),
       ],
     );
@@ -175,12 +198,10 @@ class _TopRow extends StatelessWidget {
 }
 
 /// --------------------
-/// USER GREETING (Firestore user name)
+/// USER GREETING
 /// --------------------
 class _UserGreeting extends StatelessWidget {
-  const _UserGreeting({
-    required this.greetingText,
-  });
+  const _UserGreeting({required this.greetingText});
 
   final String greetingText;
 
@@ -198,13 +219,15 @@ class _UserGreeting extends StatelessWidget {
     }
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>?;
-        final name = (data?['name'] as String?)?.trim();
-
+        final name = (data?['name'] as String?) ?? '';
         final firstName =
-        (name == null || name.isEmpty) ? 'there' : name.split(' ').first;
+        name.trim().isEmpty ? 'there' : name.split(' ').first;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +269,6 @@ class _TodayFocusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -264,7 +286,6 @@ class _TodayFocusCard extends StatelessWidget {
                 child: const Icon(
                   Icons.auto_awesome,
                   color: Color(0xFF2E7D32),
-                  size: 26,
                 ),
               ),
               const SizedBox(width: 12),
@@ -291,7 +312,8 @@ class _TodayFocusCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      style:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -306,7 +328,7 @@ class _TodayFocusCard extends StatelessWidget {
 }
 
 /// --------------------
-/// QUICK ACTIONS GRID
+/// QUICK ACTIONS
 /// --------------------
 class _QuickActionsGrid extends StatelessWidget {
   const _QuickActionsGrid({required this.actions});
@@ -354,7 +376,6 @@ class _QuickActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -364,12 +385,13 @@ class _QuickActionTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(action.icon, size: 24),
+              Icon(action.icon),
               const SizedBox(height: 8),
               Text(
                 action.label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                style:
+                const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -399,25 +421,12 @@ class _SuggestionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         onTap: onTap,
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0xFF4CAF50).withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: const Color(0xFF2E7D32)),
-        ),
+        leading: Icon(icon),
         title: Text(title),
-        subtitle: Text(
-          subtitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
       ),
     );
