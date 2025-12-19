@@ -28,11 +28,14 @@ class NourishSection extends StatelessWidget {
 
         _RecipeCarousel(
           placeholderAsset: placeholderAsset,
-          onOpenRecipe: (data) {
+          onOpenRecipe: (id, data) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => RecipeDetailScreen(data: data),
+                builder: (_) => RecipeDetailScreen(
+                  recipeId: id,
+                  data: data,
+                ),
               ),
             );
           },
@@ -47,7 +50,7 @@ class NourishSection extends StatelessWidget {
 /// --------------------
 class _RecipeCarousel extends StatelessWidget {
   final String placeholderAsset;
-  final ValueChanged<Map<String, dynamic>> onOpenRecipe;
+  final void Function(String id, Map<String, dynamic> data) onOpenRecipe;
 
   const _RecipeCarousel({
     required this.placeholderAsset,
@@ -88,11 +91,12 @@ class _RecipeCarousel extends StatelessWidget {
                 itemCount: visible.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
-                  final data = visible[index].data() as Map<String, dynamic>;
+                  final doc = visible[index];
+                  final data = doc.data() as Map<String, dynamic>;
                   return _RecipeMiniCard(
                     data: data,
                     placeholderAsset: placeholderAsset,
-                    onTap: () => onOpenRecipe(data),
+                    onTap: () => onOpenRecipe(doc.id, data),
                   );
                 },
               ),

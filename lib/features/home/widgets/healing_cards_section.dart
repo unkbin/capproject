@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/card_detail_screen.dart';
-import 'healing_cards_all_screen.dart';
 
 class HealingCardsSection extends StatelessWidget {
   const HealingCardsSection({super.key});
@@ -66,20 +65,6 @@ class HealingCardsSection extends StatelessWidget {
                     ),
                   ),
 
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HealingCardsAllScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text('Show more cards'),
-                  ),
-                ),
               ],
             );
           },
@@ -94,10 +79,12 @@ class HealingCardPreviewCard extends StatelessWidget {
     super.key,
     required this.data,
     required this.onStart,
+    this.reasonLabel,
   });
 
   final Map<String, dynamic> data;
   final VoidCallback onStart;
+  final String? reasonLabel;
 
   int _readMinutes(Map<String, dynamic> d) {
     final m1 = d['minutes'];
@@ -175,7 +162,17 @@ class HealingCardPreviewCard extends StatelessWidget {
                   height: 1.25,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
+
+              if (reasonLabel != null && reasonLabel!.isNotEmpty) ...[
+                Text(
+                  reasonLabel!,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
 
               Row(
                 children: [

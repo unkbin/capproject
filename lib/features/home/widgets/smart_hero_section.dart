@@ -20,11 +20,14 @@ class SmartHeroSection extends StatelessWidget {
     if (preferRecipe) {
       return _SmartRecipeHero(
         placeholderAsset: placeholderAsset,
-        onOpenRecipe: (data) {
+        onOpenRecipe: (id, data) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => RecipeDetailScreen(data: data),
+              builder: (_) => RecipeDetailScreen(
+                recipeId: id,
+                data: data,
+              ),
             ),
           );
         },
@@ -115,7 +118,7 @@ class _HeroFocusCard extends StatelessWidget {
 /// --------------------
 class _SmartRecipeHero extends StatelessWidget {
   final String placeholderAsset;
-  final ValueChanged<Map<String, dynamic>> onOpenRecipe;
+  final void Function(String id, Map<String, dynamic> data) onOpenRecipe;
 
   const _SmartRecipeHero({
     required this.placeholderAsset,
@@ -141,7 +144,8 @@ class _SmartRecipeHero extends StatelessWidget {
           );
         }
 
-        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+        final doc = snapshot.data!.docs.first;
+        final data = doc.data() as Map<String, dynamic>;
         final title = (data['title'] ?? '') as String;
         final minutes = data['minutes'] ?? 0;
 
@@ -153,7 +157,7 @@ class _SmartRecipeHero extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           child: InkWell(
             borderRadius: BorderRadius.circular(18),
-            onTap: () => onOpenRecipe(data),
+            onTap: () => onOpenRecipe(doc.id, data),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

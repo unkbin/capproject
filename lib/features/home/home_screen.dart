@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'screens/all_recipes_screen.dart';
 import 'widgets/healing_cards_all_screen.dart';
 import '../healing_cards/screens/healing_card_scan_screen.dart';
+import 'screens/daily_checkin_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -62,6 +63,18 @@ class HomeScreen extends StatelessWidget {
               icon: Icons.auto_awesome,
               label: 'For You',
               onTap: () => onGoToTab(1),
+            ),
+            _QuickAction(
+              icon: Icons.check_circle_outline,
+              label: 'Daily check-in',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DailyCheckInScreen(),
+                  ),
+                );
+              },
             ),
             _QuickAction(
               icon: Icons.spa_outlined,

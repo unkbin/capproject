@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../auth/screens/welcome_screen.dart';
-import 'saved_cards_screen.dart';
+import 'saved_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -196,13 +196,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.bookmark_outline),
-                title: const Text("Saved Cards"),
-                subtitle: const Text("View your saved healing cards"),
+                title: const Text("Saved"),
+                subtitle: const Text("View your saved cards and recipes"),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const SavedCardsScreen(),
+                      builder: (_) => const SavedScreen(),
                     ),
                   );
                 },

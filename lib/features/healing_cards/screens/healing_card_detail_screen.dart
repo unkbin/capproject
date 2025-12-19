@@ -62,9 +62,9 @@ class HealingCardDetailScreen extends StatelessWidget {
   }
 
   Future<void> _launch(String url, BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final uri = Uri.tryParse(url);
     if (uri == null) {
-      final messenger = ScaffoldMessenger.maybeOf(context);
       messenger?.showSnackBar(
         const SnackBar(content: Text('Invalid link')),
       );
@@ -73,7 +73,6 @@ class HealingCardDetailScreen extends StatelessWidget {
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok) {
-      final messenger = ScaffoldMessenger.maybeOf(context);
       messenger?.showSnackBar(
         const SnackBar(content: Text('Could not open link')),
       );

@@ -39,7 +39,8 @@ class AllRecipesScreen extends StatelessWidget {
             itemCount: docs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
               final title = (data['title'] ?? '') as String;
               final minutes = data['minutes'] ?? 0;
 
@@ -57,7 +58,10 @@ class AllRecipesScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RecipeDetailScreen(data: data),
+                        builder: (_) => RecipeDetailScreen(
+                          recipeId: doc.id,
+                          data: data,
+                        ),
                       ),
                     );
                   },

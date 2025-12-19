@@ -1,12 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/recipe_asset_helper.dart';
 
 class RecipeDetailScreen extends StatelessWidget {
+  final String recipeId;
   final Map<String, dynamic> data;
 
   const RecipeDetailScreen({
     super.key,
+    required this.recipeId,
     required this.data,
   });
 
@@ -94,8 +98,101 @@ class RecipeDetailScreen extends StatelessWidget {
                 Text('-> $option'),
             ],
           ],
+
+          const SizedBox(height: 24),
+          _SaveRecipeButton(recipeId: recipeId),
         ],
       ),
+    );
+  }
+}
+
+class _SaveRecipeButton extends StatelessWidget {
+  const _SaveRecipeButton({required this.recipeId});
+
+  final String recipeId;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please log in to save recipes.')),
+            );
+          },
+          icon: const Icon(Icons.login),
+          label: const Text('Log in to save'),
+        ),
+      );
+    }
+
+    final savedDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('savedRecipes')
+        .doc(recipeId);
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: savedDoc.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final isSaved = snapshot.data?.exists == true;
+        final label = isSaved ? 'Saved' : 'Save for later';
+        final icon = isSaved ? Icons.bookmark : Icons.bookmark_add;
+
+        return SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () async {
+              if (isSaved) {
+                await _unsave(context, savedDoc);
+              } else {
+                await _save(context, savedDoc);
+              }
+            },
+            icon: Icon(icon),
+            label: Text(label),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _save(
+    BuildContext context,
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    try {
+      await ref.set({'savedAt': FieldValue.serverTimestamp()});
+    } catch (e) {
+      if (!context.mounted) return;
+      _showError(context, 'Could not save. Please try again.');
+    }
+  }
+
+  Future<void> _unsave(
+    BuildContext context,
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    try {
+      await ref.delete();
+    } catch (e) {
+      if (!context.mounted) return;
+      _showError(context, 'Could not remove saved recipe.');
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
